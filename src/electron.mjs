@@ -1,17 +1,13 @@
-import windowStateManager from 'electron-window-state';
 import { app, BrowserWindow, ipcMain } from 'electron';
+import path from 'path';
+import fs from 'fs';
+import windowStateManager from 'electron-window-state';
 import contextMenu from 'electron-context-menu';
 import serve from 'electron-serve';
-import path from 'path';
 
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+const __filename = new URL(import.meta.url).pathname;
+const __dirname = path.dirname(__filename);
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
 
 if (process.env.NODE_ENV === 'development') {
   try {
@@ -46,7 +42,7 @@ function createWindow() {
 			nodeIntegration: true,
 			spellcheck: false,
 			devTools: dev,
-			preload: path.join(__dirname, 'preload.cjs'),
+			preload: path.join(__dirname, 'preload.js'),
 		},
 		x: windowState.x,
 		y: windowState.y,
@@ -100,6 +96,12 @@ function createMainWindow() {
 
 app.once('ready', () => {
 	createMainWindow();
+
+	const projectData = path.join(app.getPath('userData'), 'pixelte');
+
+	if (!fs.existsSync(projectData)) {
+		fs.mkdirSync(projectData, { recursive: true });
+	}
 });
 app.on('activate', () => {
 	if (!mainWindow) {
@@ -128,4 +130,55 @@ ipcMain.on('window-maximize', () => {
 	} else {
 		mainWindow.maximize();
 	}
+});
+
+// file
+ipcMain.handle('get-projects', async () => {
+	const projectData = path.join(app.getPath('userData'), 'pixelte');
+	const projects = fs.readdirSync(projectData);
+	let projectConfig = {};
+	for (let i = 0; i < projects.length; i++) {
+		projectConfig = JSON.parse(fs.readFileSync(path.join(projectData, projects[i], 'config.json')));
+	}
+
+	return {projects, projectConfig};
+});
+
+ipcMain.handle('create-project', async (event, projectName) => {
+	const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
+	if (!fs.existsSync(projectData)) {
+		fs.mkdirSync(projectData, { recursive: true });
+		fs.writeFileSync(path.join(projectData, 'config.json'), JSON.stringify({name: projectName}));
+	}
+
+	return projectName;
+});
+
+ipcMain.handle('delete-project', async (event, projectName) => {
+	const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
+	if (fs.existsSync(projectData)) {
+		fs.rmdirSync(projectData, { recursive: true });
+	}
+
+	return projectName;
+});
+
+ipcMain.handle('get-project', async (event, projectName) => {
+	const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
+	const projectConfig = JSON.parse(fs.readFileSync(path.join(projectData, 'config.json')));
+	const projectFiles = fs.readdirSync(projectData);
+
+	return {projectConfig, projectFiles};
+});
+
+ipcMain.handle('save-project', async (event, projectName,  projectFile, changed) => {
+	const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
+
+	fs.writeFileSync(path.join(projectData, projectFile), changed);
+});
+
+ipcMain.handle('create-file', async (event, projectName, projectFile) => {
+	const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
+
+	fs.writeFileSync(path.join(projectData, projectFile), '');
 });

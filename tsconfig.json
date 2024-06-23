@@ -27,6 +27,6 @@
         "src/**/*.d.ts",
         "src/**/*.ts",
         "src/**/*.svelte",
-        "src/electron.cjs"
+        "src/electron.mjs"
     ]
 }
