@@ -1,76 +1,96 @@
+const { app, BrowserWindow, ipcMain, Menu, protocol } = require('electron');
 const windowStateManager = require('electron-window-state');
-const { app, BrowserWindow, ipcMain } = require('electron');
-const contextMenu = require('electron-context-menu');
-const serve = require('electron-serve');
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
+const { template, menu } = require('./menu.cjs');
 
-
-if (process.env.NODE_ENV === 'development') {
-	try {
-		require('electron-reloader')(module, {});
-	} catch (_) { }
-}
-
-const serveURL = serve({ directory: '.' });
-const port = process.env.PORT || 5173;
-const dev = !app.isPackaged;
 let mainWindow;
+let serve;
+const dev = !app.isPackaged;
+const port = process.env.PORT || 5173;
+
+async function initializeApp() {
+    try {
+        const serveModule = await import('electron-serve');
+        serve = serveModule.default({ directory: '.' });
+    } catch (err) {
+        console.error('Failed to load electron-serve', err);
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+        try {
+            require('electron-reloader')(module, {});
+        } catch (_) {}
+    }
+
+    createMainWindow();
+}
 
 function createWindow() {
-	let windowState = windowStateManager({
-		defaultWidth: 800,
-		defaultHeight: 600,
-	});
+    let windowState = windowStateManager({
+        defaultWidth: 800,
+        defaultHeight: 600,
+    });
 
-	const mainWindow = new BrowserWindow({
-		backgroundColor: 'whitesmoke',
-		titleBarStyle: 'hidden',
-		autoHideMenuBar: true,
-		trafficLightPosition: {
-			x: 17,
-			y: 32,
-		},
-		minHeight: 450,
-		minWidth: 500,
-		webPreferences: {
-			enableRemoteModule: true,
-			contextIsolation: true,
-			nodeIntegration: true,
-			spellcheck: false,
-			devTools: dev,
-			preload: path.join(__dirname, 'preload.cjs'),
-		},
-		x: windowState.x,
-		y: windowState.y,
-		width: windowState.width,
-		height: windowState.height,
-	});
+    mainWindow = new BrowserWindow({
+        backgroundColor: 'whitesmoke',
+        titleBarStyle: 'hidden',
+        autoHideMenuBar: true,
+        minHeight: 450,
+        minWidth: 500,
+        webPreferences: {
+            enableRemoteModule: true,
+            contextIsolation: true,
+            nodeIntegration: true,
+            spellcheck: false,
+            devTools: dev,
+            preload: path.join(__dirname, 'preload.cjs'),
+        },
+        x: windowState.x,
+        y: windowState.y,
+        width: windowState.width,
+        height: windowState.height,
+    });
 
-	windowState.manage(mainWindow);
+    windowState.manage(mainWindow);
 
-	mainWindow.once('ready-to-show', () => {
-		mainWindow.show();
-		mainWindow.focus();
-	});
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.show();
+        mainWindow.focus();
+    });
 
-	mainWindow.on('close', () => {
-		windowState.saveState(mainWindow);
-	});
+    mainWindow.on('close', () => {
+        windowState.saveState(mainWindow);
+    });
 
-	return mainWindow;
+    import('electron-context-menu').then(module => {
+        const contextMenu = module.default;
+        contextMenu({
+            window: mainWindow,
+            showLookUpSelection: false,
+            showSearchWithGoogle: false,
+            showCopyImage: false,
+            prepend: (defaultActions, params, browserWindow) => [
+                {
+                    label: 'Make App 💻',
+                },
+            ],
+        });
+    }).catch(err => console.error('Failed to load electron-context-menu', err));
+
+    if (dev) {
+        mainWindow.loadURL(`http://localhost:${port}`).catch((e) => {
+            console.log('Error loading URL, retrying', e);
+            setTimeout(() => {
+                mainWindow.loadURL(`http://localhost:${port}`);
+            }, 200);
+        });
+    } else {
+        serve(mainWindow);
+    }
+
+    return mainWindow;
 }
-
-contextMenu({
-	showLookUpSelection: false,
-	showSearchWithGoogle: false,
-	showCopyImage: false,
-	prepend: (defaultActions, params, browserWindow) => [
-		{
-			label: 'Make App 💻',
-		},
-	],
-});
 
 function loadVite(port) {
 	mainWindow.loadURL(`http://localhost:${port}`).catch((e) => {
@@ -82,17 +102,19 @@ function loadVite(port) {
 }
 
 function createMainWindow() {
-	mainWindow = createWindow();
-	mainWindow.once('close', () => {
-		mainWindow = null;
-	});
-
-	if (dev) loadVite(port);
-	else serveURL(mainWindow);
+    mainWindow = createWindow();
+    mainWindow.once('close', () => {
+        mainWindow = null;
+    });
 }
 
+protocol.registerSchemesAsPrivileged([
+    { scheme: 'app', privileges: { secure: true, standard: true, supportFetchAPI: true } }
+]);
+
 app.once('ready', () => {
-	createMainWindow();
+	initializeApp();
+	Menu.setApplicationMenu(menu);
 
 	const projectData = path.join(app.getPath('userData'), 'pixelte');
 
@@ -127,6 +149,37 @@ ipcMain.on('window-maximize', () => {
 	} else {
 		mainWindow.maximize();
 	}
+});
+
+// system
+ipcMain.handle('get-menu', () => {
+    function buildMenuItems(menuItems) {
+        // menuItemsが配列であることを確認
+        if (!Array.isArray(menuItems)) {
+            console.error('menuItems is not an array:', menuItems);
+            return [];
+        }
+
+        return menuItems.map(item => {
+            const menuItem = {
+                label: item.label,
+            };
+            if (item.submenu) {
+                menuItem.submenu = buildMenuItems(item.submenu);
+            }
+            if (item.role) {
+                menuItem.role = item.role;
+            }
+            if (item.type) {
+                menuItem.type = item.type;
+            }
+            if (item.accelerator) {
+                menuItem.accelerator = item.accelerator;
+            }
+            return menuItem;
+        });
+    }
+    return buildMenuItems(template);
 });
 
 // file

@@ -15,6 +15,11 @@ contextBridge.exposeInMainWorld('electron', {
 		minimize: () => ipcRenderer.send('window-minimize'),
 		maximize: () => ipcRenderer.send('window-maximize'),
 	},
+	system: {
+		getMenu: async () => {
+			return await ipcRenderer.invoke('get-menu');
+		},
+	},
 	project: {
 		getProjects: async () => {
 			return await ipcRenderer.invoke('get-projects');
