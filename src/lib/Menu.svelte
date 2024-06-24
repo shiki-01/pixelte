@@ -12,21 +12,6 @@
 	}
 
 	export let menu: MenuItem[];
-	export let className: string | undefined = '';
-
-	function getSubmenuCtx() {
-		return {
-			close: () => {
-				console.log('close');
-			},
-			minimize: () => {
-				console.log('minimize');
-			},
-			maximize: () => {
-				console.log('maximize');
-			},
-		};
-	}
 
 	function handleItemClick(item: MenuItem) {
 		if (item.label) {

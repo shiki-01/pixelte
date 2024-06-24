@@ -154,7 +154,6 @@ ipcMain.on('window-maximize', () => {
 // system
 ipcMain.handle('get-menu', () => {
     function buildMenuItems(menuItems) {
-        // menuItemsが配列であることを確認
         if (!Array.isArray(menuItems)) {
             console.error('menuItems is not an array:', menuItems);
             return [];
@@ -184,14 +183,35 @@ ipcMain.handle('get-menu', () => {
 
 // file
 ipcMain.handle('get-projects', async () => {
-	const projectData = path.join(app.getPath('userData'), 'pixelte');
-	const projects = fs.readdirSync(projectData);
-	let projectConfig = {};
-	for (let i = 0; i < projects.length; i++) {
-		projectConfig = JSON.parse(fs.readFileSync(path.join(projectData, projects[i], 'config.json')));
-	}
+    const projectData = path.join(app.getPath('userData'), 'pixelte');
+    const projects = fs.readdirSync(projectData);
+    let projectConfigs = [];
+    for (let i = 0; i < projects.length; i++) {
+        const configPath = path.join(projectData, projects[i], 'config.json');
+        try {
+            const configData = fs.readFileSync(configPath);
+            if (configData.length > 0) {
+                const projectConfig = JSON.parse(configData);
+                projectConfigs.push({
+                    projectName: projects[i],
+                    ...projectConfig
+                });
+            } else {
+                projectConfigs.push({
+                    projectName: projects[i],
+                    error: 'Invalid or empty config.json'
+                });
+            }
+        } catch (error) {
+            console.error(`Error reading or parsing config.json for project ${projects[i]}:`, error);
+            projectConfigs.push({
+                projectName: projects[i],
+                error: 'Failed to read or parse config.json'
+            });
+        }
+    }
 
-	return { projects, projectConfig };
+    return { projectConfigs };
 });
 
 ipcMain.handle('create-project', async (event, projectName) => {

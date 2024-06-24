@@ -23,10 +23,10 @@
 	}
 </script>
 
-<div class="drag flex justify-between items-center p-2">
+<div class="drag flex justify-between items-center">
 	<div class="no-drag">
-		<Menubar.Root>
-			<Menu {menu} className="w-fit outline-none" />
+		<Menubar.Root class="w-fit border-none">
+			<Menu {menu} />
 		</Menubar.Root>
 	</div>
 	<div class="no-drag">
