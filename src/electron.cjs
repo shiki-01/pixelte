@@ -1,18 +1,15 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
-import path from 'path';
-import fs from 'fs';
-import windowStateManager from 'electron-window-state';
-import contextMenu from 'electron-context-menu';
-import serve from 'electron-serve';
-
-const __filename = new URL(import.meta.url).pathname;
-const __dirname = path.dirname(__filename);
+const windowStateManager = require('electron-window-state');
+const { app, BrowserWindow, ipcMain } = require('electron');
+const contextMenu = require('electron-context-menu');
+const serve = require('electron-serve');
+const path = require('path');
+const fs = require('fs');
 
 
 if (process.env.NODE_ENV === 'development') {
-  try {
-    require('electron-reloader')(module, {});
-  } catch (_) {}
+	try {
+		require('electron-reloader')(module, {});
+	} catch (_) { }
 }
 
 const serveURL = serve({ directory: '.' });
@@ -141,14 +138,14 @@ ipcMain.handle('get-projects', async () => {
 		projectConfig = JSON.parse(fs.readFileSync(path.join(projectData, projects[i], 'config.json')));
 	}
 
-	return {projects, projectConfig};
+	return { projects, projectConfig };
 });
 
 ipcMain.handle('create-project', async (event, projectName) => {
 	const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
 	if (!fs.existsSync(projectData)) {
 		fs.mkdirSync(projectData, { recursive: true });
-		fs.writeFileSync(path.join(projectData, 'config.json'), JSON.stringify({name: projectName}));
+		fs.writeFileSync(path.join(projectData, 'config.json'), JSON.stringify({ name: projectName }));
 	}
 
 	return projectName;
@@ -168,10 +165,10 @@ ipcMain.handle('get-project', async (event, projectName) => {
 	const projectConfig = JSON.parse(fs.readFileSync(path.join(projectData, 'config.json')));
 	const projectFiles = fs.readdirSync(projectData);
 
-	return {projectConfig, projectFiles};
+	return { projectConfig, projectFiles };
 });
 
-ipcMain.handle('save-project', async (event, projectName,  projectFile, changed) => {
+ipcMain.handle('save-project', async (event, projectName, projectFile, changed) => {
 	const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
 
 	fs.writeFileSync(path.join(projectData, projectFile), changed);

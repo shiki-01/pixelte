@@ -1,5 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
-import { create } from 'electron-connect/lib/server';
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
 	send: (channel, data) => {

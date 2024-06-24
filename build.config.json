@@ -5,7 +5,7 @@
 		"output": "dist"
 	},
 	"files": [
-		"src/electron.cjs",
+		"src/electron.mjs",
 		"src/preload.cjs",
 		{
 			"from": "build",
