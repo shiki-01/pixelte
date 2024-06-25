@@ -11,6 +11,13 @@
 		return [];
 	}
 
+	async function removeTabs(tab: string) {
+		if (typeof window !== 'undefined') {
+			await window.electron.system.removeTabs(tab);
+			tabs = await getTabs();
+		}
+	}
+
 	onMount(async () => {
 		tabs = await getTabs();
 	});
@@ -25,7 +32,7 @@
 		{#each tabs as tab}
 			<div>
 				{tab}
-				<button on:click={() => window.electron.system.removeTab(tab)}>Close</button>
+				<button on:click={() => removeTabs(tab)}>Close</button>
 			</div>
 		{/each}
 	{:else}
