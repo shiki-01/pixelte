@@ -1,6 +1,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
+	receive: (channel, func) => {
+		ipcRenderer.on(channel, (event, ...args) => func(...args));
+	},
 	send: (channel, data) => {
 		ipcRenderer.send(channel, data);
 	},
@@ -20,6 +23,11 @@ contextBridge.exposeInMainWorld('electron', {
 		getMenu: async () => {
 			return await ipcRenderer.invoke('get-menu');
 		},
+		addTabs: (tabName) => ipcRenderer.send('add-tab', tabName),
+		removeTabs: (tabName) => ipcRenderer.send('remove-tab', tabName),
+		getTabs: async () => {
+			return await ipcRenderer.invoke('get-tabs');
+		}
 	},
 	project: {
 		getProjects: async () => {

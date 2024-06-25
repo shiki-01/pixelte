@@ -1,19 +1,35 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	import type { Project } from '$lib/types';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 
-	let projectData: Project;
-	onMount(async () => {});
+	let tabs: string[] = [];
 
-	$: projectData;
+	async function getTabs() {
+		if (typeof window !== 'undefined') {
+			const result = await window.electron.system.getTabs();
+			return result;
+		}
+		return [];
+	}
+
+	onMount(async () => {
+		tabs = await getTabs();
+	});
+
+	onDestroy(() => {
+		tabs = [];
+	});
 </script>
 
 <main class="">
-	{#if projectData}
-		<div>
-			<h1>Project: {projectData.projectName}</h1>
-		</div>
+	{#if tabs.length > 0}
+		{#each tabs as tab}
+			<div>
+				{tab}
+				<button on:click={() => window.electron.system.removeTab(tab)}>Close</button>
+			</div>
+		{/each}
+	{:else}
+		<div>No tabs</div>
 	{/if}
 </main>
 

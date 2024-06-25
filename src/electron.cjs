@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu, protocol } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, protocol, ipcRenderer } = require('electron');
 const windowStateManager = require('electron-window-state');
 const fs = require('fs');
 const path = require('path');
@@ -188,6 +188,26 @@ ipcMain.handle('get-menu', () => {
         });
     }
     return buildMenuItems(template);
+});
+
+let tabs = [];
+
+ipcMain.on('add-tab', (event, tabName) => {
+    if (projectWindow) {
+        projectWindow.webContents.send('execute-command', { command: 'reload' });
+    }
+    tabs.push(tabName);
+});
+
+ipcMain.on('remove-tab', (event, tabName) => {
+    if (projectWindow) {
+        projectWindow.webContents.send('execute-command', { command: 'reload' });
+    }
+    tabs = tabs.filter(tab => tab !== tabName);
+});
+
+ipcMain.handle('get-tabs', () => {
+    return tabs;
 });
 
 let projectWindow;

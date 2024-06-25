@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { Project } from '$lib/types';
+	import { projectTab } from '$lib/store';
 	import * as Card from '$lib/components/ui/card';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { EllipsisVertical, ExternalLink, FolderCog, Download, Trash2 } from 'lucide-svelte';
@@ -10,15 +11,15 @@
 
 	$: projectData;
 
-	let openedProject: any[] = [];
-
-	function addNewTab(projectName: string) {
-		console.log(projectName);
-		if (openedProject.includes(projectName)) {
+	async function addNewTab(projectName: string) {
+		const tabs: string[] = await window.electron.system.getTabs();
+		console.log(tabs);
+		if (tabs.find((tab) => tab === projectName)) {
 			window.electron.window.openTab({ projectName });
 			return;
 		}
-		openedProject.push(projectName);
+		window.electron.system.addTabs(projectName);
+		console.log(window.electron.system.getTabs());
 		window.electron.window.openTab({ projectName });
 	}
 

@@ -3,7 +3,3 @@ export interface Project {
     createDate: string;
     updateDate: string;
 }
-
-export interface ProjectData {
-    
-}
