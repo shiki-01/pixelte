@@ -138,17 +138,26 @@ ipcMain.on('to-main', (event, count) => {
 
 // window
 ipcMain.on('window-close', () => {
-	mainWindow.close();
+    const window = BrowserWindow.getFocusedWindow();
+    if (window) {
+        window.close();
+    }
 });
 ipcMain.on('window-minimize', () => {
-	mainWindow.minimize();
+    const window = BrowserWindow.getFocusedWindow();
+    if (window) {
+        window.minimize();
+    }
 });
 ipcMain.on('window-maximize', () => {
-	if (mainWindow.isMaximized()) {
-		mainWindow.unmaximize();
-	} else {
-		mainWindow.maximize();
-	}
+    const window = BrowserWindow.getFocusedWindow();
+    if (window) {
+        if (window.isMaximized()) {
+            window.unmaximize();
+        } else {
+            window.maximize();
+        }
+    }
 });
 
 // system
@@ -179,6 +188,69 @@ ipcMain.handle('get-menu', () => {
         });
     }
     return buildMenuItems(template);
+});
+
+let projectWindow;
+
+ipcMain.handle('open-tab', async (event, tabName) => {
+    if (projectWindow) {
+        projectWindow.focus();
+        return;
+    }
+
+    projectWindow = new BrowserWindow({
+        backgroundColor: 'whitesmoke',
+        titleBarStyle: 'hidden',
+        autoHideMenuBar: true,
+        minHeight: 450,
+        minWidth: 500,
+        webPreferences: {
+            enableRemoteModule: true,
+            contextIsolation: true,
+            nodeIntegration: true,
+            spellcheck: false,
+            devTools: dev,
+            preload: path.join(__dirname, 'preload.cjs'),
+        },
+    });
+
+    import('electron-context-menu').then(module => {
+        const contextMenu = module.default;
+        contextMenu({
+            window: projectWindow,
+            showLookUpSelection: false,
+            showSearchWithGoogle: false,
+            showCopyImage: false,
+            prepend: (defaultActions, params, browserWindow) => [
+                {
+                    label: 'Make App 💻',
+                },
+            ],
+        });
+    }).catch(err => console.error('Failed to load electron-context-menu', err));
+
+    projectWindow.once('ready-to-show', () => {
+        projectWindow.show();
+        projectWindow.focus();
+    });
+
+    projectWindow.on('close', () => {
+        projectWindow = null;
+    });
+
+    console.log(tabName)
+
+    if (dev) {
+        console.log('http://localhost:' + port + '/project/' + tabName.projectName);
+        projectWindow.loadURL(`http://localhost:${port}/project/${tabName.projectName}`).catch((e) => {
+            console.log('Error loading URL, retrying', e);
+            setTimeout(() => {
+                projectWindow.loadURL(`http://localhost:${port}/project/${tabName.projectName}`);
+            }, 200);
+        });
+    } else {
+        serve(projectWindow);
+    }
 });
 
 // file
@@ -236,9 +308,8 @@ ipcMain.handle('delete-project', async (event, projectName) => {
 ipcMain.handle('get-project', async (event, projectName) => {
 	const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
 	const projectConfig = JSON.parse(fs.readFileSync(path.join(projectData, 'config.json')));
-	const projectFiles = fs.readdirSync(projectData);
 
-	return { projectConfig, projectFiles };
+	return { projectConfig };
 });
 
 ipcMain.handle('save-project', async (event, projectName, projectFile, changed) => {

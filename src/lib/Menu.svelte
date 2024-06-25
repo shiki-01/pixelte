@@ -12,6 +12,7 @@
 	}
 
 	export let menu: MenuItem[];
+	export let sub: boolean = false;
 
 	function handleItemClick(item: MenuItem) {
 		if (item.label) {
@@ -25,12 +26,21 @@
 {#if menu}
 	{#each menu as item, index (item.label ?? index)}
 		{#if item.submenu}
-			<Menubar.Menu>
-				<Menubar.Trigger>{item.label}</Menubar.Trigger>
-				<Menubar.Content>
-					<Menu menu={item.submenu} />
-				</Menubar.Content>
-			</Menubar.Menu>
+			{#if sub}
+				<Menubar.Sub>
+					<Menubar.SubTrigger>{item.label}</Menubar.SubTrigger>
+					<Menubar.SubContent>
+						<Menu menu={item.submenu} />
+					</Menubar.SubContent>
+				</Menubar.Sub>
+			{:else}
+				<Menubar.Menu>
+					<Menubar.Trigger>{item.label}</Menubar.Trigger>
+					<Menubar.Content>
+						<Menu menu={item.submenu} sub />
+					</Menubar.Content>
+				</Menubar.Menu>
+			{/if}
 		{:else if item.role}
 			<Menubar.Item>{item.role}</Menubar.Item>
 		{:else if item.type === 'separator'}

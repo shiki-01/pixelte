@@ -1,19 +1,26 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import type { Project } from '$lib/types';
 	import * as Card from '$lib/components/ui/card';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { EllipsisVertical, ExternalLink, FolderCog, Download, Trash2 } from 'lucide-svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 
-	interface Project {
-		projectName: string;
-		createDate: string;
-		updateDate: string;
-	}
-
 	let projectData: Project[] = [];
 
 	$: projectData;
+
+	let openedProject: any[] = [];
+
+	function addNewTab(projectName: string) {
+		console.log(projectName);
+		if (openedProject.includes(projectName)) {
+			window.electron.window.openTab({ projectName });
+			return;
+		}
+		openedProject.push(projectName);
+		window.electron.window.openTab({ projectName });
+	}
 
 	onMount(async () => {
 		const data = await window.electron.project.getProjects();
@@ -32,7 +39,7 @@
 								variant="ghost"
 								class="hover:bg-white"
 								on:click={() => {
-									window.location.href = `/project/${project.projectName}`;
+									addNewTab(project.projectName);
 								}}
 							>
 								{project.projectName}

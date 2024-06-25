@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('electron', {
 		close: () => ipcRenderer.send('window-close'),
 		minimize: () => ipcRenderer.send('window-minimize'),
 		maximize: () => ipcRenderer.send('window-maximize'),
+		openTab: (tabName) => ipcRenderer.invoke('open-tab', tabName),
 	},
 	system: {
 		getMenu: async () => {
