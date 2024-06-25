@@ -4,17 +4,12 @@
 	import { onMount } from 'svelte';
 
 	let projectData: Project;
-	onMount(async () => {
-		const parms = $page.params.name;
-		const data = await window.electron.project.getProject(parms);
-		projectData = data.projectConfig;
-		console.log(projectData);
-	});
+	onMount(async () => {});
 
 	$: projectData;
 </script>
 
-<main>
+<main class="">
 	{#if projectData}
 		<div>
 			<h1>Project: {projectData.projectName}</h1>

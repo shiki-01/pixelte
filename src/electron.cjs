@@ -241,11 +241,11 @@ ipcMain.handle('open-tab', async (event, tabName) => {
     console.log(tabName)
 
     if (dev) {
-        console.log('http://localhost:' + port + '/project/' + tabName.projectName);
-        projectWindow.loadURL(`http://localhost:${port}/project/${tabName.projectName}`).catch((e) => {
+        console.log('http://localhost:' + port + '/project/');
+        projectWindow.loadURL(`http://localhost:${port}/project/}`).catch((e) => {
             console.log('Error loading URL, retrying', e);
             setTimeout(() => {
-                projectWindow.loadURL(`http://localhost:${port}/project/${tabName.projectName}`);
+                projectWindow.loadURL(`http://localhost:${port}/project/`);
             }, 200);
         });
     } else {
