@@ -255,13 +255,12 @@ ipcMain.handle('open-tab', async (event, tabName) => {
     });
 
     projectWindow.on('close', () => {
+        tabs = [];
         projectWindow = null;
     });
 
-    console.log(tabName)
 
     if (dev) {
-        console.log('http://localhost:' + port + '/project/');
         projectWindow.loadURL(`http://localhost:${port}/project/}`).catch((e) => {
             console.log('Error loading URL, retrying', e);
             setTimeout(() => {
@@ -269,6 +268,7 @@ ipcMain.handle('open-tab', async (event, tabName) => {
             }, 200);
         });
     } else {
+        projectWindow.loadURL(`app://./project/`);
         serve(projectWindow);
     }
 });

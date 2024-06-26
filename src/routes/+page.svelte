@@ -19,7 +19,6 @@
 			return;
 		}
 		window.electron.system.addTabs(projectName);
-		console.log(window.electron.system.getTabs());
 		window.electron.window.openTab({ projectName });
 	}
 
