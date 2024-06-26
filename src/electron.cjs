@@ -192,18 +192,22 @@ ipcMain.handle('get-menu', () => {
 
 let tabs = [];
 
+ipcMain.on('stop-command', (event, channel) => {
+    ipcMain.removeAllListeners(channel);
+});
+
 ipcMain.on('add-tab', (event, tabName) => {
-    if (projectWindow) {
-        projectWindow.webContents.send('execute-command', { command: 'reload' });
-    }
     tabs.push(tabName);
+    if (projectWindow) {
+        projectWindow.webContents.send('update-tabs', tabs);
+    }
 });
 
 ipcMain.on('remove-tab', (event, tabName) => {
-    if (projectWindow) {
-        projectWindow.webContents.send('execute-command', { command: 'reload' });
-    }
     tabs = tabs.filter(tab => tab !== tabName);
+    if (projectWindow) {
+        projectWindow.webContents.send('update-tabs', tabs);
+    }
 });
 
 ipcMain.handle('get-tabs', () => {

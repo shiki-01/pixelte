@@ -11,8 +11,8 @@ contextBridge.exposeInMainWorld('electron', {
 		ipcRenderer.on(channel, (event, ...args) => func(...args));
 	},
 	off: (channel, func) => {
-        ipcRenderer.off(channel, func);
-    },
+		ipcRenderer.off(channel, func);
+	},
 	window: {
 		close: () => ipcRenderer.send('window-close'),
 		minimize: () => ipcRenderer.send('window-minimize'),
@@ -20,6 +20,14 @@ contextBridge.exposeInMainWorld('electron', {
 		openTab: (tabName) => ipcRenderer.invoke('open-tab', tabName),
 	},
 	system: {
+		command: (callback) => {
+			ipcRenderer.on('update-tabs', ( _event, command) => {
+				callback(command)
+			});
+		},
+		stopCommand: (channel) => {
+            ipcRenderer.send('stop-command', channel);
+        },
 		getMenu: async () => {
 			return await ipcRenderer.invoke('get-menu');
 		},

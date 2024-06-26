@@ -11,17 +11,6 @@
 		return [];
 	}
 
-	function setupTabUpdateListener() {
-		console.log('setup');
-		const listener = async (event, args) => {
-			if (args.command === 'reload') {
-				tabs = await getTabs();
-			}
-		};
-		window.electron.receive.ipcRenderer.on('execute-command', listener);
-		return () => window.electron.receive.ipcRenderer.off('execute-command', listener);
-	}
-
 	async function removeTabs(tab: string) {
 		if (typeof window !== 'undefined') {
 			await window.electron.system.removeTabs(tab);
@@ -29,21 +18,24 @@
 		}
 	}
 
-	let removeListener;
+	let commandListener;
 
 	onMount(async () => {
 		tabs = await getTabs();
-		console.log('mount');
 		if (typeof window !== 'undefined') {
-			setupTabUpdateListener();
-			tabs = await getTabs();
+			commandListener = async (value) => {
+				// 'tabs-updated'イベントをリッスンして、タブのリストを更新します。
+				if (value === 'tabs-updated') {
+					tabs = await getTabs();
+				}
+			};
+			window.electron.system.command(commandListener);
 		}
 	});
 
 	onDestroy(() => {
-		console.log('destroy');
-		if (typeof window !== 'undefined' && removeListener) {
-			window.electron.receive.ipcRenderer.off('execute-command', listener);
+		if (typeof window !== 'undefined' && commandListener) {
+			window.electron.system.stopCommand(commandListener);
 		}
 	});
 </script>
