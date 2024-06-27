@@ -6,20 +6,22 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { EllipsisVertical, ExternalLink, FolderCog, Download, Trash2 } from 'lucide-svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
+	import { get } from 'svelte/store';
 
 	let projectData: Project[] = [];
 
 	$: projectData;
 
-	async function addNewTab(projectName: string) {
-		const tabs: string[] = await window.electron.system.getTabs();
-		console.log(tabs);
-		if (tabs.find((tab) => tab === projectName)) {
-			window.electron.window.openTab({ projectName });
-			return;
-		}
-		window.electron.system.addTabs(projectName);
-		window.electron.window.openTab({ projectName });
+	function addNewTab(projectName: string) {
+		projectTab.update((tabs) => {
+			if (!tabs.includes(projectName)) {
+				tabs.push(projectName);
+				window.electron.system.addTabs(projectName);
+			}
+			return tabs;
+		});
+		window.location.href = `/project/${projectName}`;
+		console.log(get(projectTab));
 	}
 
 	onMount(async () => {

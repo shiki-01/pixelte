@@ -1,43 +1,39 @@
 <script lang="ts">
+	import { page } from '$app/stores';
+	import { projectTab, activeProject } from '$lib/store';
 	import { onDestroy, onMount } from 'svelte';
+
+	onMount(async () => {
+		const parm = $page.params.name;
+		activeProject.set(parm);
+		unsubscribe();
+	});
 
 	let tabs: string[] = [];
 
-	async function getTabs() {
+	async function unsubscribe() {
 		if (typeof window !== 'undefined') {
-			const result = await window.electron.system.getTabs();
-			return result;
-		}
-		return [];
-	}
-
-	async function removeTabs(tab: string) {
-		if (typeof window !== 'undefined') {
-			await window.electron.system.removeTabs(tab);
-			tabs = await getTabs();
+			const data = await window.electron.system.getTabs();
+			tabs = data.map((tab: { name: any }) => tab.name);
 		}
 	}
-
-	let commandListener;
-
-	onMount(async () => {
-		tabs = await getTabs();
-		if (typeof window !== 'undefined') {
-			commandListener = async (value) => {
-				// 'tabs-updated'イベントをリッスンして、タブのリストを更新します。
-				if (value === 'tabs-updated') {
-					tabs = await getTabs();
-				}
-			};
-			window.electron.system.command(commandListener);
-		}
-	});
 
 	onDestroy(() => {
-		if (typeof window !== 'undefined' && commandListener) {
-			window.electron.system.stopCommand(commandListener);
-		}
+		unsubscribe();
 	});
+
+	function removeTabs(tab: string) {
+		if (typeof window !== 'undefined') {
+			window.electron.system.removeTabs(tab);
+		}
+		tabs = tabs.filter((t) => t !== tab);
+	}
+
+	$: {
+		if (tabs.length >= 0 && typeof window !== 'undefined') {
+			window.location.href = `/`;
+		}
+	}
 </script>
 
 <main class="">
@@ -50,6 +46,7 @@
 		{/each}
 	{:else}
 		<div>No tabs</div>
+		<a href="/">Go back</a>
 	{/if}
 </main>
 

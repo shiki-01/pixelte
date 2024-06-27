@@ -118,9 +118,21 @@ app.once('ready', () => {
 
 	const projectData = path.join(app.getPath('userData'), 'pixelte');
 
+    const settings = path.join(projectData, '.settings');
+
+    const openTabs = path.join(settings, 'openTabs.json');
+
 	if (!fs.existsSync(projectData)) {
 		fs.mkdirSync(projectData, { recursive: true });
 	}
+
+    if (!fs.existsSync(settings)) {
+        fs.mkdirSync(settings, { recursive: true });
+    }
+
+    if (!fs.existsSync(openTabs)) {
+        fs.writeFileSync(openTabs, '[]');
+    }
 });
 app.on('activate', () => {
 	if (!mainWindow) {
@@ -190,120 +202,67 @@ ipcMain.handle('get-menu', () => {
     return buildMenuItems(template);
 });
 
-let tabs = [];
-
-ipcMain.on('stop-command', (event, channel) => {
-    ipcMain.removeAllListeners(channel);
-});
+const openTabs = path.join(app.getPath('userData'), 'pixelte', '.settings', 'openTabs.json');
 
 ipcMain.on('add-tab', (event, tabName) => {
-    tabs.push(tabName);
-    if (projectWindow) {
-        projectWindow.webContents.send('update-tabs', tabs);
+    if (!tabName) {
+        return;
+    }
+    let existingTabs = JSON.parse(fs.readFileSync(openTabs, 'utf8'));
+    if (!existingTabs.some(tab => tab.name === tabName)) {
+        existingTabs.push({name: tabName, isSaved: true});
+        fs.writeFileSync(openTabs, JSON.stringify(existingTabs));
     }
 });
 
 ipcMain.on('remove-tab', (event, tabName) => {
-    tabs = tabs.filter(tab => tab !== tabName);
-    if (projectWindow) {
-        projectWindow.webContents.send('update-tabs', tabs);
+    if (!tabName) {
+        return;
     }
+    let existingTabs = JSON.parse(fs.readFileSync(openTabs, 'utf8'));
+    existingTabs = existingTabs.filter(tab => tab.name !== tabName);
+    fs.writeFileSync(openTabs, JSON.stringify(existingTabs));
 });
 
 ipcMain.handle('get-tabs', () => {
-    return tabs;
-});
-
-let projectWindow;
-
-ipcMain.handle('open-tab', async (event, tabName) => {
-    if (projectWindow) {
-        projectWindow.focus();
-        return;
-    }
-
-    projectWindow = new BrowserWindow({
-        backgroundColor: 'whitesmoke',
-        titleBarStyle: 'hidden',
-        autoHideMenuBar: true,
-        minHeight: 450,
-        minWidth: 500,
-        webPreferences: {
-            enableRemoteModule: true,
-            contextIsolation: true,
-            nodeIntegration: true,
-            spellcheck: false,
-            devTools: dev,
-            preload: path.join(__dirname, 'preload.cjs'),
-        },
-    });
-
-    import('electron-context-menu').then(module => {
-        const contextMenu = module.default;
-        contextMenu({
-            window: projectWindow,
-            showLookUpSelection: false,
-            showSearchWithGoogle: false,
-            showCopyImage: false,
-            prepend: (defaultActions, params, browserWindow) => [
-                {
-                    label: 'Make App 💻',
-                },
-            ],
-        });
-    }).catch(err => console.error('Failed to load electron-context-menu', err));
-
-    projectWindow.once('ready-to-show', () => {
-        projectWindow.show();
-        projectWindow.focus();
-    });
-
-    projectWindow.on('close', () => {
-        tabs = [];
-        projectWindow = null;
-    });
-
-
-    if (dev) {
-        projectWindow.loadURL(`http://localhost:${port}/project/}`).catch((e) => {
-            console.log('Error loading URL, retrying', e);
-            setTimeout(() => {
-                projectWindow.loadURL(`http://localhost:${port}/project/`);
-            }, 200);
-        });
-    } else {
-        projectWindow.loadURL(`app://./project/`);
-        serve(projectWindow);
-    }
+    return JSON.parse(fs.readFileSync(openTabs, 'utf8'));
 });
 
 // file
 ipcMain.handle('get-projects', async () => {
     const projectData = path.join(app.getPath('userData'), 'pixelte');
-    const projects = fs.readdirSync(projectData);
+    const entries = fs.readdirSync(projectData);
     let projectConfigs = [];
-    for (let i = 0; i < projects.length; i++) {
-        const configPath = path.join(projectData, projects[i], 'config.json');
-        try {
-            const configData = fs.readFileSync(configPath);
-            if (configData.length > 0) {
-                const projectConfig = JSON.parse(configData);
+    for (let i = 0; i < entries.length; i++) {
+        if (entries[i].endsWith('.settings')) {
+            continue;
+        }
+
+        const entryPath = path.join(projectData, entries[i]);
+        const isDirectory = fs.statSync(entryPath).isDirectory();
+        if (isDirectory) {
+            const configPath = path.join(entryPath, 'config.json');
+            try {
+                const configData = fs.readFileSync(configPath);
+                if (configData.length > 0) {
+                    const projectConfig = JSON.parse(configData);
+                    projectConfigs.push({
+                        projectName: entries[i],
+                        ...projectConfig
+                    });
+                } else {
+                    projectConfigs.push({
+                        projectName: entries[i],
+                        error: 'Invalid or empty config.json'
+                    });
+                }
+            } catch (error) {
+                console.error(`Error reading or parsing config.json for project ${entries[i]}:`, error);
                 projectConfigs.push({
-                    projectName: projects[i],
-                    ...projectConfig
-                });
-            } else {
-                projectConfigs.push({
-                    projectName: projects[i],
-                    error: 'Invalid or empty config.json'
+                    projectName: entries[i],
+                    error: 'Failed to read or parse config.json'
                 });
             }
-        } catch (error) {
-            console.error(`Error reading or parsing config.json for project ${projects[i]}:`, error);
-            projectConfigs.push({
-                projectName: projects[i],
-                error: 'Failed to read or parse config.json'
-            });
         }
     }
 
