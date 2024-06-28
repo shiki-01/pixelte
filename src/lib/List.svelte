@@ -6,7 +6,6 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { EllipsisVertical, ExternalLink, FolderCog, Download, Trash2 } from 'lucide-svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import { get } from 'svelte/store';
 
 	let projectData: Project[] = [];
 
@@ -21,7 +20,12 @@
 			return tabs;
 		});
 		if (window.location.pathname === '/') {
-			window.location.href = `/project/${projectName}`;
+			window.location.href = `/project?tabs=${projectName}activeProject=${projectName}`;
+		} else {
+			const url = new URL(window.location.href);
+			url.searchParams.set('tabs', projectName + ',' + url.searchParams.get('tabs'));
+			url.searchParams.set('activeProject', projectName);
+			window.location.href = url.href;
 		}
 	}
 

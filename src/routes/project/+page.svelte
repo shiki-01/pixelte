@@ -8,23 +8,16 @@
 	import { Button } from '$lib/components/ui/button';
 
 	let tabs: string[] = [];
-	let intervalId: ReturnType<typeof setInterval>;
-
-	async function updateTabs() {
-		if (typeof window !== 'undefined') {
-			const data = await window.electron.system.getTabs();
-			return data.map((tab: { name: any }) => tab.name);
-		}
-	}
 
 	onMount(async () => {
-		const parm = $page.params.name;
-		activeProject.set(parm);
+		const params = $page.url.searchParams.get('tabs');
+		if (params) {
+			projectTab.set(params.split(','));
+		}
+		tabs = $projectTab;
 	});
 
-	onDestroy(() => {
-		if (intervalId) clearInterval(intervalId);
-	});
+	onDestroy(() => {});
 
 	function removeTabs(tab: string) {
 		if (typeof window !== 'undefined') {
