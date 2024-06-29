@@ -8,8 +8,6 @@
 	import { X, House } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 
-	let tab: string | null = null;
-
 	onMount(async () => {
 		const parm = $page.params.name;
 		activeProject.set(parm);
@@ -21,37 +19,22 @@
 			return tabs;
 		});
 	});
-
-	$: {
-		tab = $activeProject;
-	}
 </script>
 
 <main class="">
-	{#if tab}
+	{#if $activeProject}
 		<div class="flex flex-rows gap-4 px-4 border-y-2 align-middle">
 			<div class="flex justify-end items-center align-middle">
-				<Dialog.Root>
-					<Dialog.Trigger>
-						<Button variant="ghost" class="hover:bg-slate-50 h-5 p-0">
-							<House size={15} />
-						</Button>
-					</Dialog.Trigger>
-					<Dialog.Content class="max-w-[500px] max-h-[500px] overflow-y-auto">
-						<div>
-							<List />
-						</div>
-					</Dialog.Content>
-				</Dialog.Root>
+				<House size={20} on:click={() => (window.location.href = '/')} />
 			</div>
 			<div class="flex justify-between items-center">
-				<Button variant="ghost" class="hover:bg-slate-50 h-5">{tab}</Button>
+				<Button variant="ghost" class="hover:bg-slate-50 h-5">{$activeProject}</Button>
 				<Button variant="ghost" class="w-5 h-5 p-0" on:click={() => console.log()}>
 					<X size={15} />
 				</Button>
 			</div>
 		</div>
-		<Editor projectName={tab} />
+		<Editor projectName={$activeProject} />
 	{:else}
 		<div>No tabs</div>
 		<a href="/">Go back</a>

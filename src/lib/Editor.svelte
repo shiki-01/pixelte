@@ -26,5 +26,6 @@
 				</button>
 			</div>
 		</div>
+		<a href="/">home</a>
 	</div>
 </main>

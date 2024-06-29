@@ -13,6 +13,8 @@
 
 	let showModal = false;
 	let newProject = '';
+	let newProjectWidth = 0;
+	let newProjectHeight = 0;
 
 	onMount(async () => {
 		menu = await window.electron.system.getMenu();
@@ -34,6 +36,7 @@
 	function createFile() {
 		window.electron.project.createProject(newProject);
 		showModal = false;
+		window.location.reload();
 	}
 </script>
 
@@ -47,6 +50,16 @@
 			<div class="grid grid-cols-4 items-center gap-4">
 				<Label for="name" class="text-right">Name</Label>
 				<Input id="name" bind:value={newProject} class="col-span-3" />
+			</div>
+			<div class="grid grid-cols-4 items-center gap-4">
+				<div class="col-span-4">
+					<Label for="width" class="text-right">Width</Label>
+					<Input id="width" bind:value={newProjectWidth} class="w-full" />
+				</div>
+				<div class="col-span-4">
+					<Label for="height" class="text-right">Height</Label>
+					<Input id="height" bind:value={newProjectHeight} class="w-full" />
+				</div>
 			</div>
 		</div>
 		<Dialog.Footer>

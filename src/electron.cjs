@@ -4,8 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const { template, menu } = require('./menu.cjs');
 const zlib = require('zlib');
-const gzip = zlib.createGzip();
-const gunzip = zlib.createGunzip();
+const { promisify } = require('util');
+const { gzip, gunzip } = { gzip: promisify(zlib.gzip), gunzip: promisify(zlib.gunzip) };
+const gzipAsync = promisify(zlib.gzip);
+const gunzipAsync = promisify(zlib.gunzip);
 
 let mainWindow;
 let serve;
@@ -251,26 +253,27 @@ ipcMain.handle('get-projects', async () => {
         const entryPath = path.join(projectData, entries[i]);
         const isDirectory = fs.statSync(entryPath).isDirectory();
         if (isDirectory) {
-            const configPath = path.join(entryPath, 'config.json');
-            try {
-                const configData = fs.readFileSync(configPath);
-                if (configData.length > 0) {
-                    const projectConfig = JSON.parse(configData);
+            const configPath = path.join(entryPath, 'config.json.gz');
+            if (fs.existsSync(configPath)) {
+                try {
+                    const configData = fs.readFileSync(configPath);
+                    const decompressedData = zlib.gunzipSync(configData);
+                    const projectConfig = JSON.parse(decompressedData);
                     projectConfigs.push({
                         projectName: entries[i],
                         ...projectConfig
                     });
-                } else {
+                } catch (error) {
+                    console.error(`Error reading or parsing config.json for project ${entries[i]}:`, error);
                     projectConfigs.push({
                         projectName: entries[i],
-                        error: 'Invalid or empty config.json'
+                        error: 'Failed to read or parse config.json'
                     });
                 }
-            } catch (error) {
-                console.error(`Error reading or parsing config.json for project ${entries[i]}:`, error);
+            } else {
                 projectConfigs.push({
                     projectName: entries[i],
-                    error: 'Failed to read or parse config.json'
+                    error: 'config.json.gz file does not exist'
                 });
             }
         }
@@ -284,7 +287,7 @@ ipcMain.handle('create-project', async (event, projectName) => {
     if (!fs.existsSync(projectData)) {
         fs.mkdirSync(projectData, { recursive: true });
         const configData = JSON.stringify({ name: projectName });
-        const compressedData = await gzip(configData);
+        const compressedData = await gzipAsync(configData);
         fs.writeFileSync(path.join(projectData, 'config.json.gz'), compressedData);
     }
 
@@ -303,7 +306,7 @@ ipcMain.handle('delete-project', async (event, projectName) => {
 ipcMain.handle('get-project', async (event, projectName) => {
     const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
     const compressedConfig = fs.readFileSync(path.join(projectData, 'config.json.gz'));
-    const decompressedConfig = await gunzip(compressedConfig);
+    const decompressedConfig = await gunzipAsync(compressedConfig);
     const projectConfig = JSON.parse(decompressedConfig.toString());
 
     return { projectConfig };
@@ -311,7 +314,7 @@ ipcMain.handle('get-project', async (event, projectName) => {
 
 ipcMain.handle('save-project', async (event, projectName, changed) => {
     const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
-    const compressedData = await gzip(changed);
+    const compressedData = await gzipAsync(changed);
     fs.writeFileSync(path.join(projectData, 'config.json.gz'), compressedData);
 });
 
