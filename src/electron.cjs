@@ -3,6 +3,9 @@ const windowStateManager = require('electron-window-state');
 const fs = require('fs');
 const path = require('path');
 const { template, menu } = require('./menu.cjs');
+const zlib = require('zlib');
+const gzip = zlib.createGzip();
+const gunzip = zlib.createGunzip();
 
 let mainWindow;
 let serve;
@@ -187,6 +190,9 @@ ipcMain.handle('get-menu', () => {
             if (item.submenu) {
                 menuItem.submenu = buildMenuItems(item.submenu);
             }
+            if (item.id) {
+                menuItem.id = item.id;
+            }
             if (item.role) {
                 menuItem.role = item.role;
             }
@@ -200,6 +206,10 @@ ipcMain.handle('get-menu', () => {
         });
     }
     return buildMenuItems(template);
+});
+
+ipcMain.handle('send-command', (event, command) => {
+    mainWindow.webContents.send(command);
 });
 
 const openTabs = path.join(app.getPath('userData'), 'pixelte', '.settings', 'openTabs.json');
@@ -270,13 +280,15 @@ ipcMain.handle('get-projects', async () => {
 });
 
 ipcMain.handle('create-project', async (event, projectName) => {
-	const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
-	if (!fs.existsSync(projectData)) {
-		fs.mkdirSync(projectData, { recursive: true });
-		fs.writeFileSync(path.join(projectData, 'config.json'), JSON.stringify({ name: projectName }));
-	}
+    const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
+    if (!fs.existsSync(projectData)) {
+        fs.mkdirSync(projectData, { recursive: true });
+        const configData = JSON.stringify({ name: projectName });
+        const compressedData = await gzip(configData);
+        fs.writeFileSync(path.join(projectData, 'config.json.gz'), compressedData);
+    }
 
-	return projectName;
+    return projectName;
 });
 
 ipcMain.handle('delete-project', async (event, projectName) => {
@@ -289,16 +301,18 @@ ipcMain.handle('delete-project', async (event, projectName) => {
 });
 
 ipcMain.handle('get-project', async (event, projectName) => {
-	const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
-	const projectConfig = JSON.parse(fs.readFileSync(path.join(projectData, 'config.json')));
+    const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
+    const compressedConfig = fs.readFileSync(path.join(projectData, 'config.json.gz'));
+    const decompressedConfig = await gunzip(compressedConfig);
+    const projectConfig = JSON.parse(decompressedConfig.toString());
 
-	return { projectConfig };
+    return { projectConfig };
 });
 
-ipcMain.handle('save-project', async (event, projectName, projectFile, changed) => {
-	const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
-
-	fs.writeFileSync(path.join(projectData, projectFile), changed);
+ipcMain.handle('save-project', async (event, projectName, changed) => {
+    const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
+    const compressedData = await gzip(changed);
+    fs.writeFileSync(path.join(projectData, 'config.json.gz'), compressedData);
 });
 
 ipcMain.handle('create-file', async (event, projectName, projectFile) => {

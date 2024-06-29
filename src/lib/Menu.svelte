@@ -3,6 +3,7 @@
 	import Menu from '$lib/Menu.svelte';
 
 	interface MenuItem {
+		id: string;
 		label?: string;
 		icon?: string;
 		role?: string;
@@ -15,11 +16,7 @@
 	export let sub: boolean = false;
 
 	function handleItemClick(item: MenuItem) {
-		if (item.label) {
-			console.log(`${item.label} clicked`);
-		} else if (item.role) {
-			console.log(`${item.role} action triggered`);
-		}
+		window.electron.system.sendCommand(item.id);
 	}
 </script>
 
@@ -42,11 +39,11 @@
 				</Menubar.Menu>
 			{/if}
 		{:else if item.role}
-			<Menubar.Item>{item.role}</Menubar.Item>
+			<Menubar.Item on:click={() => handleItemClick(item)}>{item.role}</Menubar.Item>
 		{:else if item.type === 'separator'}
 			<Menubar.Separator />
 		{:else}
-			<Menubar.Item>{item.label}</Menubar.Item>
+			<Menubar.Item on:click={() => handleItemClick(item)}>{item.label}</Menubar.Item>
 		{/if}
 	{/each}
 {/if}

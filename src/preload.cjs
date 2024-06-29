@@ -7,8 +7,10 @@ contextBridge.exposeInMainWorld('electron', {
 	sendSync: (channel, data) => {
 		ipcRenderer.sendSync(channel, data);
 	},
-	receive: (channel, func) => {
-		ipcRenderer.on(channel, (event, ...args) => func(...args));
+	receive: {
+		receiveNewFile: (callback) => {
+			ipcRenderer.on('new-file', (event, ...args) => callback(...args));
+		}
 	},
 	off: (channel, func) => {
 		ipcRenderer.off(channel, func);
@@ -24,6 +26,9 @@ contextBridge.exposeInMainWorld('electron', {
 			ipcRenderer.on('update-tabs', ( _event, command) => {
 				callback(command)
 			});
+		},
+		sendCommand: (command) => {
+			ipcRenderer.invoke('send-command', command);
 		},
 		stopCommand: (channel) => {
             ipcRenderer.send('stop-command', channel);

@@ -20,12 +20,7 @@
 			return tabs;
 		});
 		if (window.location.pathname === '/') {
-			window.location.href = `/project?tabs=${projectName}activeProject=${projectName}`;
-		} else {
-			const url = new URL(window.location.href);
-			url.searchParams.set('tabs', projectName + ',' + url.searchParams.get('tabs'));
-			url.searchParams.set('activeProject', projectName);
-			window.location.href = url.href;
+			window.location.href = `/project/${projectName}`;
 		}
 	}
 

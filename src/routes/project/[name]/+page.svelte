@@ -2,43 +2,33 @@
 	import { page } from '$app/stores';
 	import { projectTab, activeProject } from '$lib/store';
 	import List from '$lib/List.svelte';
+	import Editor from '$lib/Editor.svelte';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { onDestroy, onMount } from 'svelte';
 	import { X, House } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 
-	let tabs: string[] = [];
-	let intervalId: ReturnType<typeof setInterval>;
-
-	async function updateTabs() {
-		if (typeof window !== 'undefined') {
-			const data = await window.electron.system.getTabs();
-			return data.map((tab: { name: any }) => tab.name);
-		}
-	}
+	let tab: string | null = null;
 
 	onMount(async () => {
 		const parm = $page.params.name;
 		activeProject.set(parm);
+		projectTab.update((tabs) => {
+			if (!tabs.includes(parm)) {
+				tabs.push(parm);
+				window.electron.system.addTabs(parm);
+			}
+			return tabs;
+		});
 	});
 
-	onDestroy(() => {
-		if (intervalId) clearInterval(intervalId);
-	});
-
-	function removeTabs(tab: string) {
-		if (typeof window !== 'undefined') {
-			window.electron.system.removeTabs(tab);
-		}
-		tabs = tabs.filter((t) => t !== tab);
-		if (tabs.length === 0) {
-			window.location.href = '/';
-		}
+	$: {
+		tab = $activeProject;
 	}
 </script>
 
 <main class="">
-	{#if tabs.length > 0}
+	{#if tab}
 		<div class="flex flex-rows gap-4 px-4 border-y-2 align-middle">
 			<div class="flex justify-end items-center align-middle">
 				<Dialog.Root>
@@ -54,15 +44,14 @@
 					</Dialog.Content>
 				</Dialog.Root>
 			</div>
-			{#each tabs as tab}
-				<div class="flex justify-between items-center">
-					<Button variant="ghost" class="hover:bg-slate-50 h-5">{tab}</Button>
-					<Button variant="ghost" class="w-5 h-5 p-0" on:click={() => removeTabs(tab)}>
-						<X size={15} />
-					</Button>
-				</div>
-			{/each}
+			<div class="flex justify-between items-center">
+				<Button variant="ghost" class="hover:bg-slate-50 h-5">{tab}</Button>
+				<Button variant="ghost" class="w-5 h-5 p-0" on:click={() => console.log()}>
+					<X size={15} />
+				</Button>
+			</div>
 		</div>
+		<Editor projectName={tab} />
 	{:else}
 		<div>No tabs</div>
 		<a href="/">Go back</a>

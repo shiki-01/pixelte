@@ -5,13 +5,16 @@ const template = [
         label: 'File',
         submenu: [
             {
+                id: 'new-file',
                 label: 'New',
                 accelerator: 'CmdOrCtrl+N',
                 click(item, focusedWindow){
+                    console.log('new file');
                     if(focusedWindow) focusedWindow.webContents.send('new-file');
                 },
             },
             {
+                id: 'open-file',
                 label: 'Open',
                 accelerator: 'CmdOrCtrl+O',
                 click(item, focusedWindow){
@@ -19,6 +22,7 @@ const template = [
                 },
             },
             {
+                id: 'save-file',
                 label: 'Save',
                 accelerator: 'CmdOrCtrl+S',
                 click(item, focusedWindow){
@@ -26,6 +30,7 @@ const template = [
                 },
             },
             {
+                id: 'save-file-as',
                 label: 'Save As',
                 accelerator: 'CmdOrCtrl+Shift+S',
                 click(item, focusedWindow){
@@ -36,6 +41,7 @@ const template = [
                 type: 'separator',
             },
             {
+                id: 'close-file',
                 label: 'Close',
                 accelerator: 'CmdOrCtrl+W',
                 click(item, focusedWindow){
@@ -46,6 +52,7 @@ const template = [
                 type: 'separator',
             },
             {
+                id: 'new-window',
                 label: 'Settings',
                 accelerator: 'CmdOrCtrl+,',
                 click(item, focusedWindow){
@@ -64,6 +71,7 @@ const template = [
         label: 'Edit',
         submenu: [
             {
+                id: 'undo',
                 label: 'Undo',
                 accelerator: 'CmdOrCtrl+Z',
                 click(item, focusedWindow){
@@ -71,6 +79,7 @@ const template = [
                 },
             },
             {
+                id: 'redo',
                 label: 'Redo',
                 accelerator: 'CmdOrCtrl+Shift+Z',
                 click(item, focusedWindow){
@@ -81,6 +90,7 @@ const template = [
                 type: 'separator',
             },
             {
+                id: 'cut',
                 label: 'Cut',
                 accelerator: 'CmdOrCtrl+X',
                 click(item, focusedWindow){
@@ -88,6 +98,7 @@ const template = [
                 },
             },
             {
+                id: 'copy',
                 label: 'Copy',
                 accelerator: 'CmdOrCtrl+C',
                 click(item, focusedWindow){
@@ -95,6 +106,7 @@ const template = [
                 },
             },
             {
+                id: 'paste',
                 label: 'Paste',
                 accelerator: 'CmdOrCtrl+V',
                 click(item, focusedWindow){
@@ -105,6 +117,7 @@ const template = [
                 type: 'separator',
             },
             {
+                id: 'select-all',
                 label: 'Select All',
                 accelerator: 'CmdOrCtrl+A',
                 click(item, focusedWindow){
@@ -117,6 +130,7 @@ const template = [
         label: 'View',
         submenu: [
             {
+                id: 'reload',
                 label: 'Reload',
                 accelerator: 'CmdOrCtrl+R',
                 click(item, focusedWindow){
@@ -124,6 +138,7 @@ const template = [
                 },
             },
             {
+                id: 'toggle-full-screen',
                 label: 'Toggle Full Screen',
                 accelerator: 'F11',
                 click(item, focusedWindow){
@@ -131,6 +146,7 @@ const template = [
                 },
             },
             {
+                id: 'toggle-dev-tools',
                 label: 'Zen Mode',
                 accelerator: 'F12',
                 click(item, focusedWindow){
@@ -158,6 +174,7 @@ const template = [
                 type: 'separator',
             },
             {
+                id: 'zoom-in',
                 label: 'Zoom In',
                 accelerator: 'CmdOrCtrl+=',
                 click(item, focusedWindow){
@@ -165,6 +182,7 @@ const template = [
                 },
             },
             {
+                id: 'zoom-out',
                 label: 'Zoom Out',
                 accelerator: 'CmdOrCtrl+-',
                 click(item, focusedWindow){
@@ -172,6 +190,7 @@ const template = [
                 },
             },
             {
+                id: 'reset-zoom',
                 label: 'Reset Zoom',
                 accelerator: 'CmdOrCtrl+0',
                 click(item, focusedWindow){
@@ -184,6 +203,7 @@ const template = [
         label: 'Help',
         submenu: [
             {
+                id: 'about',
                 label: 'About',
                 click(item, focusedWindow){
                     if(focusedWindow) focusedWindow.webContents.send('about');
