@@ -282,13 +282,17 @@ ipcMain.handle('get-projects', async () => {
     return { projectConfigs };
 });
 
-ipcMain.handle('create-project', async (event, projectName) => {
+ipcMain.handle('create-project', async (event, projectName, width, height) => {
     const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
     if (!fs.existsSync(projectData)) {
         fs.mkdirSync(projectData, { recursive: true });
-        const configData = JSON.stringify({ name: projectName });
-        const compressedData = await gzipAsync(configData);
-        fs.writeFileSync(path.join(projectData, 'config.json.gz'), compressedData);
+        const configData = JSON.stringify({ name: projectName, width, height });
+        const compressedConfigData = await gzipAsync(configData);
+        fs.writeFileSync(path.join(projectData, 'config.json.gz'), compressedConfigData);
+
+        const canvasData = Array.from({ length: height }, () => Array.from({ length: width }, () => "#00000000"));
+        const compressedCanvasData = await gzipAsync(JSON.stringify(canvasData));
+        fs.writeFileSync(path.join(projectData, 'canvas.json.gz'), compressedCanvasData);
     }
 
     return projectName;
@@ -303,19 +307,34 @@ ipcMain.handle('delete-project', async (event, projectName) => {
 	return projectName;
 });
 
+
 ipcMain.handle('get-project', async (event, projectName) => {
     const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
     const compressedConfig = fs.readFileSync(path.join(projectData, 'config.json.gz'));
     const decompressedConfig = await gunzipAsync(compressedConfig);
     const projectConfig = JSON.parse(decompressedConfig.toString());
 
-    return { projectConfig };
+    const compressedCanvas = fs.readFileSync(path.join(projectData, 'canvas.json.gz'));
+    const decompressedCanvas = await gunzipAsync(compressedCanvas);
+    const canvasData = JSON.parse(decompressedCanvas.toString());
+
+    return { projectConfig, canvasData };
 });
 
 ipcMain.handle('save-project', async (event, projectName, changed) => {
     const projectData = path.join(app.getPath('userData'), 'pixelte', projectName);
-    const compressedData = await gzipAsync(changed);
-    fs.writeFileSync(path.join(projectData, 'config.json.gz'), compressedData);
+    console.log('saving project', projectName, changed);
+
+    if (changed.configChanges) {
+        const compressedConfigData = await gzipAsync(JSON.stringify(changed.configChanges));
+        fs.writeFileSync(path.join(projectData, 'config.json.gz'), compressedConfigData);
+    }
+
+    if (changed.canvasChanges) {
+        const compressedCanvasData = await gzipAsync(JSON.stringify(changed.canvasChanges));
+        fs.writeFileSync(path.join(projectData, 'canvas.json.gz'), compressedCanvasData);
+        console.log('canvas saved');
+    }
 });
 
 ipcMain.handle('create-file', async (event, projectName, projectFile) => {

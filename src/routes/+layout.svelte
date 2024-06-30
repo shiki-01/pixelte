@@ -34,7 +34,7 @@
 	}
 
 	function createFile() {
-		window.electron.project.createProject(newProject);
+		window.electron.project.createProject(newProject, newProjectWidth, newProjectHeight);
 		showModal = false;
 		window.location.reload();
 	}

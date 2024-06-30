@@ -46,8 +46,8 @@ contextBridge.exposeInMainWorld('electron', {
 		getProjects: async () => {
 			return await ipcRenderer.invoke('get-projects');
 		},
-		createProject: async (projectName) => {
-			return await ipcRenderer.invoke('create-project', projectName);
+		createProject: async (projectName, width, height) => {
+			return await ipcRenderer.invoke('create-project', projectName, width, height);
 		},
 		deleteProject: async (projectName) => {
 			return await ipcRenderer.invoke('delete-project', projectName);
@@ -55,8 +55,8 @@ contextBridge.exposeInMainWorld('electron', {
 		getProject: async (projectName) => {
 			return await ipcRenderer.invoke('get-project', projectName);
 		},
-		saveProject: async (projectName, projectFile, changed) => {
-			return await ipcRenderer.invoke('save-project', projectName, projectFile, changed);
+		saveProject: async (projectName, changed) => {
+			return await ipcRenderer.invoke('save-project', projectName, changed);
 		},
 		createFile: async (projectName, fileName) => {
 			return await ipcRenderer.invoke('create-file', projectName, fileName);
